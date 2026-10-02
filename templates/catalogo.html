@@ -25,7 +25,7 @@
             {% if p.estoque > 0 %}
             <p class="estoque">{{ p.estoque }} em estoque</p>
             <!-- Na Etapa 4 este botão vai abrir o formulário de pedido -->
-            <button type="button" disabled>Comprar (em breve)</button>
+            <a class="botao" href="{{ url_for('pedido', produto_id=p.id) }}">Comprar</a>
             {% else %}
             <p class="estoque esgotado">Esgotado</p>
             {% endif %}

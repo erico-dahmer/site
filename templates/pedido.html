@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titulo %}Pedido - {{ produto.nome }}{% endblock %}
+
+{% block conteudo %}
+<h2>Finalizar pedido</h2>
+
+<div class="pedido-box">
+    <div class="pedido-produto">
+        {% if produto.imagem %}
+        <img src="{{ url_for('static', filename='uploads/' ~ produto.imagem) }}" alt="{{ produto.nome }}">
+        {% endif %}
+        <h3>{{ produto.nome }}</h3>
+        <p>{{ produto.descricao }}</p>
+        <p class="preco">R$ {{ ("%.2f"|format(produto.valor_venda)).replace('.', ',') }}</p>
+        <p class="estoque">{{ produto.estoque }} em estoque</p>
+    </div>
+
+    <form id="form-pedido" method="POST" data-preco="{{ produto.valor_venda }}">
+        <label>Seu nome
+            <input type="text" name="cliente_nome" required>
+        </label>
+        <label>Seu e-mail
+            <input type="email" name="cliente_email" required>
+        </label>
+        <label>Quantidade
+            <input type="number" id="quantidade" name="quantidade"
+                   min="1" max="{{ produto.estoque }}" value="1" required>
+        </label>
+
+        <p class="total-linha">Total: <strong>R$ <span id="total">0,00</span></strong></p>
+
+        <button type="submit">Finalizar pedido</button>
+        <a href="{{ url_for('catalogo') }}">Voltar ao catálogo</a>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/pedido.js') }}"></script>
+{% endblock %}
