@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block titulo %}Relatórios{% endblock %}
+
+{% block conteudo %}
+<h2>Relatórios de vendas</h2>
+
+<form method="GET" class="filtros">
+    <label>Data inicial
+        <input type="date" name="data_inicio" value="{{ data_inicio }}">
+    </label>
+    <label>Data final
+        <input type="date" name="data_fim" value="{{ data_fim }}">
+    </label>
+    <label>Agrupar por
+        <select name="periodo">
+            <option value="diario" {% if periodo == 'diario' %}selected{% endif %}>Diário</option>
+            <option value="semanal" {% if periodo == 'semanal' %}selected{% endif %}>Semanal</option>
+            <option value="mensal" {% if periodo == 'mensal' %}selected{% endif %}>Mensal</option>
+        </select>
+    </label>
+    <button type="submit">Filtrar</button>
+</form>
+
+<div class="grafico-box">
+    <h3>Unidades vendidas por produto</h3>
+    {% if grafico.labels %}
+    <canvas id="grafico"></canvas>
+    {% else %}
+    <p>Nenhuma venda encontrada nesse período.</p>
+    {% endif %}
+</div>
+
+<h3>Resumo do período</h3>
+<table>
+    <tr>
+        <th>Produto</th><th>Unidades vendidas</th><th>Receita</th><th>Lucro</th>
+    </tr>
+    {% for r in resumo %}
+    <tr>
+        <td>{{ r.nome }}</td>
+        <td>{{ r.unidades }}</td>
+        <td>R$ {{ "%.2f"|format(r.receita) }}</td>
+        <td>R$ {{ "%.2f"|format(r.lucro) }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<!-- Biblioteca de gráficos (precisa de internet) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+    const dadosGrafico = {{ grafico|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/relatorios.js') }}"></script>
+{% endblock %}

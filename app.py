@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from flask import Flask, flash, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
@@ -144,6 +144,88 @@ def pedido(produto_id):
 
     # 3. Se só abriu a página (GET), mostra o formulário
     return render_template("pedido.html", produto=produto)
+
+# Como cada "recorte de tempo" vira texto para agrupar as vendas
+FORMATOS_PERIODO = {
+    "diario": "%Y-%m-%d",   # ex.: 2026-10-02
+    "semanal": "%Y-S%W",    # ex.: 2026-S40 (número da semana no ano)
+    "mensal": "%Y-%m",      # ex.: 2026-10
+}
+
+
+@app.route("/relatorios")
+def relatorios():
+    hoje = date.today()
+
+    # Lê os filtros da URL; se não vierem, usa os últimos 30 dias
+    data_inicio = request.args.get("data_inicio") or (hoje - timedelta(days=30)).isoformat()
+    data_fim = request.args.get("data_fim") or hoje.isoformat()
+    periodo = request.args.get("periodo", "diario")
+
+    if periodo not in FORMATOS_PERIODO:
+        periodo = "diario"
+
+    if data_inicio > data_fim:
+        flash("A data inicial era maior que a final. Invertemos as duas.", "erro")
+        data_inicio, data_fim = data_fim, data_inicio
+
+    with get_connection() as conn:
+        # Vendas agrupadas por período e por produto (dados do gráfico)
+        vendas = conn.execute(
+            """SELECT strftime(?, ped.data_pedido) AS periodo,
+                      pr.id AS produto_id,
+                      SUM(ped.quantidade) AS unidades
+               FROM pedidos ped
+               JOIN produtos pr ON pr.id = ped.produto_id
+               WHERE date(ped.data_pedido) BETWEEN ? AND ?
+               GROUP BY periodo, pr.id
+               ORDER BY periodo""",
+            (FORMATOS_PERIODO[periodo], data_inicio, data_fim),
+        ).fetchall()
+
+        # Resumo por produto (tabela). LEFT JOIN faz aparecer até quem não vendeu
+        produtos = conn.execute(
+            """SELECT pr.id, pr.nome,
+                      COALESCE(SUM(ped.quantidade), 0) AS unidades,
+                      COALESCE(SUM(ped.valor_total), 0) AS receita,
+                      COALESCE(SUM(ped.quantidade * pr.custo_producao), 0) AS custo
+               FROM produtos pr
+               LEFT JOIN pedidos ped
+                      ON ped.produto_id = pr.id
+                     AND date(ped.data_pedido) BETWEEN ? AND ?
+               GROUP BY pr.id
+               ORDER BY pr.id""",
+            (data_inicio, data_fim),
+        ).fetchall()
+
+    # Monta os dados no formato que o gráfico entende
+    labels = sorted({v["periodo"] for v in vendas})
+    mapa = {(v["periodo"], v["produto_id"]): v["unidades"] for v in vendas}
+
+    datasets = []
+    resumo = []
+    for p in produtos:
+        datasets.append({
+            "label": p["nome"],
+            "data": [mapa.get((lab, p["id"]), 0) for lab in labels],
+        })
+        resumo.append({
+            "nome": p["nome"],
+            "unidades": p["unidades"],
+            "receita": p["receita"],
+            "lucro": p["receita"] - p["custo"],
+        })
+
+    grafico = {"labels": labels, "datasets": datasets}
+
+    return render_template(
+        "relatorios.html",
+        grafico=grafico,
+        resumo=resumo,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+        periodo=periodo,
+    )
 
 if __name__ == "__main__":
     init_db()

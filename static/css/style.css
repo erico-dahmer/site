@@ -79,3 +79,24 @@ button:disabled { background: #999; cursor: not-allowed; }
     border-radius: 6px;
 }
 .total-linha { font-size: 1.2rem; margin: 0; }
+
+/* ===== Relatórios (Etapa 5) ===== */
+.filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: end;
+}
+select {
+    padding: .5rem;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    font: inherit;
+}
+.grafico-box {
+    background: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1.2rem 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
+}
