@@ -100,3 +100,5 @@ select {
     margin: 1.2rem 0;
     box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
 }
+/* ===== Login (Etapa 6) ===== */
+.form-login { max-width: 360px; margin: 0 auto; }

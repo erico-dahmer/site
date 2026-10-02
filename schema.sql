@@ -18,3 +18,9 @@ CREATE TABLE IF NOT EXISTS pedidos (
     data_pedido   TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
     FOREIGN KEY (produto_id) REFERENCES produtos (id)
 );
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario    TEXT NOT NULL UNIQUE,
+    senha_hash TEXT NOT NULL
+);

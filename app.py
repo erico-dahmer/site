@@ -1,7 +1,9 @@
 import os
 from datetime import date, datetime, timedelta
+from functools import wraps
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
 
 from database import get_connection, init_db
@@ -19,6 +21,15 @@ MAX_PRODUTOS = 3
 def extensao_valida(nome_arquivo):
     return "." in nome_arquivo and nome_arquivo.rsplit(".", 1)[1].lower() in EXTENSOES_OK
 
+def login_required(funcao):
+    """Bloqueia a página se a pessoa não estiver logada."""
+    @wraps(funcao)
+    def verificar(*args, **kwargs):
+        if "usuario" not in session:
+            flash("Faça login para acessar esta página.", "erro")
+            return redirect(url_for("login"))
+        return funcao(*args, **kwargs)
+    return verificar
 
 @app.route("/")
 def catalogo():
@@ -28,6 +39,7 @@ def catalogo():
 
 
 @app.route("/admin")
+@login_required
 def admin():
     with get_connection() as conn:
         produtos = conn.execute("SELECT * FROM produtos ORDER BY id").fetchall()
@@ -35,6 +47,7 @@ def admin():
 
 
 @app.route("/admin/produtos", methods=["POST"])
+@login_required
 def cadastrar_produto():
     with get_connection() as conn:
         total = conn.execute("SELECT COUNT(*) FROM produtos").fetchone()[0]
@@ -154,6 +167,7 @@ FORMATOS_PERIODO = {
 
 
 @app.route("/relatorios")
+@login_required
 def relatorios():
     hoje = date.today()
 
@@ -226,6 +240,89 @@ def relatorios():
         data_fim=data_fim,
         periodo=periodo,
     )
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        usuario = request.form.get("usuario", "").strip()
+        senha = request.form.get("senha", "")
+
+        with get_connection() as conn:
+            linha = conn.execute(
+                "SELECT * FROM usuarios WHERE usuario = ?", (usuario,)
+            ).fetchone()
+
+        if linha and check_password_hash(linha["senha_hash"], senha):
+            session["usuario"] = linha["usuario"]
+            flash("Login realizado com sucesso!", "ok")
+            return redirect(url_for("admin"))
+
+        flash("Usuário ou senha incorretos.", "erro")
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Você saiu do sistema.", "ok")
+    return redirect(url_for("catalogo"))
+
+@app.route("/admin/produtos/<int:produto_id>/editar", methods=["GET", "POST"])
+@login_required
+def editar_produto(produto_id):
+    with get_connection() as conn:
+        produto = conn.execute(
+            "SELECT * FROM produtos WHERE id = ?", (produto_id,)
+        ).fetchone()
+
+    if produto is None:
+        flash("Produto não encontrado.", "erro")
+        return redirect(url_for("admin"))
+
+    if request.method == "POST":
+        nome = request.form.get("nome", "").strip()
+        descricao = request.form.get("descricao", "").strip()
+
+        try:
+            custo = float(request.form.get("custo_producao", "").replace(",", "."))
+            valor = float(request.form.get("valor_venda", "").replace(",", "."))
+            estoque = int(request.form.get("estoque", ""))
+        except ValueError:
+            flash("Custo, valor e estoque precisam ser números válidos.", "erro")
+            return redirect(url_for("editar_produto", produto_id=produto_id))
+
+        if not nome or not descricao:
+            flash("Nome e descrição são obrigatórios.", "erro")
+            return redirect(url_for("editar_produto", produto_id=produto_id))
+        if custo < 0 or valor < 0 or estoque < 0:
+            flash("Valores não podem ser negativos.", "erro")
+            return redirect(url_for("editar_produto", produto_id=produto_id))
+
+        # Mantém a imagem antiga, a menos que envie uma nova
+        nome_imagem = produto["imagem"]
+        arquivo = request.files.get("imagem")
+        if arquivo and arquivo.filename:
+            if not extensao_valida(arquivo.filename):
+                flash("Imagem inválida. Use png, jpg, jpeg, webp ou gif.", "erro")
+                return redirect(url_for("editar_produto", produto_id=produto_id))
+            prefixo = datetime.now().strftime("%Y%m%d%H%M%S")
+            nome_imagem = f"{prefixo}_{secure_filename(arquivo.filename)}"
+            arquivo.save(os.path.join(UPLOAD_DIR, nome_imagem))
+
+        with get_connection() as conn:
+            conn.execute(
+                """UPDATE produtos
+                   SET nome = ?, descricao = ?, custo_producao = ?,
+                       valor_venda = ?, estoque = ?, imagem = ?
+                   WHERE id = ?""",
+                (nome, descricao, custo, valor, estoque, nome_imagem, produto_id),
+            )
+
+        flash("Produto atualizado com sucesso!", "ok")
+        return redirect(url_for("admin"))
+
+    return render_template("editar_produto.html", produto=produto)
 
 if __name__ == "__main__":
     init_db()

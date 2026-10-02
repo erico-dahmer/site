@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titulo %}Editar produto{% endblock %}
+
+{% block conteudo %}
+<h2>Editar produto #{{ produto.id }}</h2>
+
+<form method="POST" enctype="multipart/form-data">
+    <label>Nome
+        <input type="text" name="nome" value="{{ produto.nome }}" required>
+    </label>
+    <label>Descrição detalhada
+        <textarea name="descricao" rows="3" required>{{ produto.descricao }}</textarea>
+    </label>
+    <label>Custo de produção (R$)
+        <input type="text" name="custo_producao" value="{{ produto.custo_producao }}" required>
+    </label>
+    <label>Valor de venda (R$)
+        <input type="text" name="valor_venda" value="{{ produto.valor_venda }}" required>
+    </label>
+    <label>Estoque disponível
+        <input type="number" name="estoque" min="0" value="{{ produto.estoque }}" required>
+    </label>
+    <label>Trocar imagem (opcional)
+        <input type="file" name="imagem" accept="image/*">
+    </label>
+
+    {% if produto.imagem %}
+    <img src="{{ url_for('static', filename='uploads/' ~ produto.imagem) }}" width="120" alt="{{ produto.nome }}">
+    {% endif %}
+
+    <button type="submit">Salvar alterações</button>
+    <a href="{{ url_for('admin') }}">Cancelar</a>
+</form>
+{% endblock %}

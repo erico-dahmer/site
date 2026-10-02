@@ -33,7 +33,7 @@
 <h3>Produtos cadastrados</h3>
 <table>
     <tr>
-        <th>Código</th><th>Nome</th><th>Custo</th><th>Venda</th><th>Estoque</th><th>Imagem</th>
+        <th>Código</th><th>Nome</th><th>Custo</th><th>Venda</th><th>Estoque</th><th>Imagem</th><th>Ações</th>
     </tr>
     {% for p in produtos %}
     <tr>
@@ -47,7 +47,7 @@
             <img src="{{ url_for('static', filename='uploads/' ~ p.imagem) }}" width="50" alt="{{ p.nome }}">
             {% else %}-{% endif %}
         </td>
+        <td><a href="{{ url_for('editar_produto', produto_id=p.id) }}">Editar</a></td>
     </tr>
-    {% endfor %}
 </table>
 {% endblock %}
