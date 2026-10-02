@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titulo %}Admin - Produtos{% endblock %}
+
+{% block conteudo %}
+<h2>Cadastro de produtos ({{ produtos|length }}/{{ max_produtos }})</h2>
+
+{% if produtos|length < max_produtos %}
+<form method="POST" action="{{ url_for('cadastrar_produto') }}" enctype="multipart/form-data">
+    <label>Nome
+        <input type="text" name="nome" required>
+    </label>
+    <label>Descrição detalhada
+        <textarea name="descricao" rows="3" required></textarea>
+    </label>
+    <label>Custo de produção (R$)
+        <input type="text" name="custo_producao" required>
+    </label>
+    <label>Valor de venda (R$)
+        <input type="text" name="valor_venda" required>
+    </label>
+    <label>Estoque disponível
+        <input type="number" name="estoque" min="0" required>
+    </label>
+    <label>Imagem do produto
+        <input type="file" name="imagem" accept="image/*">
+    </label>
+    <button type="submit">Cadastrar</button>
+</form>
+{% else %}
+<p>Os 3 produtos já foram cadastrados.</p>
+{% endif %}
+
+<h3>Produtos cadastrados</h3>
+<table>
+    <tr>
+        <th>Código</th><th>Nome</th><th>Custo</th><th>Venda</th><th>Estoque</th><th>Imagem</th>
+    </tr>
+    {% for p in produtos %}
+    <tr>
+        <td>{{ p.id }}</td>
+        <td>{{ p.nome }}</td>
+        <td>R$ {{ "%.2f"|format(p.custo_producao) }}</td>
+        <td>R$ {{ "%.2f"|format(p.valor_venda) }}</td>
+        <td>{{ p.estoque }}</td>
+        <td>
+            {% if p.imagem %}
+            <img src="{{ url_for('static', filename='uploads/' ~ p.imagem) }}" width="50" alt="{{ p.nome }}">
+            {% else %}-{% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
