@@ -15,3 +15,36 @@ th, td { padding: .6rem; border-bottom: 1px solid #ddd; text-align: left; }
 .msg { padding: .7rem; border-radius: 4px; }
 .msg.ok { background: #d9f2df; }
 .msg.erro { background: #f8d7d3; }
+/* ===== Catálogo (Etapa 3) ===== */
+.vitrine {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.2rem;
+}
+.card {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
+    display: flex;
+    flex-direction: column;
+}
+.card img, .sem-imagem {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+.sem-imagem {
+    background: #d5dbe8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+}
+.card-corpo { padding: 1rem; display: grid; gap: .5rem; }
+.card-corpo h3 { margin: 0; }
+.descricao { margin: 0; color: #444; font-size: .95rem; }
+.preco { margin: 0; font-size: 1.4rem; font-weight: bold; color: #2450c8; }
+.estoque { margin: 0; font-size: .85rem; color: #2a7a3b; }
+.estoque.esgotado { color: #c0392b; font-weight: bold; }
+button:disabled { background: #999; cursor: not-allowed; }

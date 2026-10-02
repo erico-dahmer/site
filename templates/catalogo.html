@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titulo %}Catálogo{% endblock %}
+
+{% block conteudo %}
+<h2>Nossos produtos</h2>
+
+{% if produtos|length == 0 %}
+<p>Nenhum produto cadastrado ainda. Cadastre no <a href="{{ url_for('admin') }}">Admin</a>.</p>
+{% endif %}
+
+<div class="vitrine">
+    {% for p in produtos %}
+    <article class="card">
+        {% if p.imagem %}
+        <img src="{{ url_for('static', filename='uploads/' ~ p.imagem) }}" alt="{{ p.nome }}">
+        {% else %}
+        <div class="sem-imagem">Sem imagem</div>
+        {% endif %}
+
+        <div class="card-corpo">
+            <h3>{{ p.nome }}</h3>
+            <p class="descricao">{{ p.descricao }}</p>
+            <p class="preco">R$ {{ ("%.2f"|format(p.valor_venda)).replace('.', ',') }}</p>
+
+            {% if p.estoque > 0 %}
+            <p class="estoque">{{ p.estoque }} em estoque</p>
+            <!-- Na Etapa 4 este botão vai abrir o formulário de pedido -->
+            <button type="button" disabled>Comprar (em breve)</button>
+            {% else %}
+            <p class="estoque esgotado">Esgotado</p>
+            {% endif %}
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% endblock %}
